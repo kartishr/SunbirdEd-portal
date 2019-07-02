@@ -38,25 +38,6 @@ node('build-slave') {
             stage('Build') {
                 sh("./build.sh ${build_tag} ${env.NODE_NAME} ${hub_org}")
             }
-
-            // Building cdn artifact
-            // if toggle enabled; default is false
-            // override this variable by creating a jenkins parameter and assign `true`
-            def cdnEnable = params.cdnEnable ?: false
-            // If cdnEnable variable is set true; else skip
-            if (cdnEnable) {
-                // check jenkins parameter cdnUrl
-                if ( ! params.cdnUrl ){
-                    error 'cdn url is not defined'
-                    stage('Build-CDN') {
-                        sh ("docker run --rm -v `pwd`:/work -w /work node:8.11.2-alpine sh ./build-cdn.sh ${params.cdnUrl} ${commit_hash} ${artifact_version}")
-                        archiveArtifacts 'src/app/player_artifacts.zip*'
-                        // Appending artifact info into metadata
-                        sh (" sed -i 's/}/,\"artifact_name\" : \"player_artifacts.zip\", \"artifact_version\":\"${artifact_version}\"}/g' metadata.json")
-                    }
-                }
-            }
-
             stage('ArchiveArtifacts') {
                 archiveArtifacts "metadata.json"
                 currentBuild.description = "${build_tag}"
